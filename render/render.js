@@ -329,21 +329,31 @@ module.exports = function($window) {
 			}
 		}
 	}
+	function makeRemoveCallback(parent,vnode,context) {
+		function cb(){
+			if (++cb.called === cb.expected) removeNode(parent, vnode, context, true)
+		}
+		cb.called = 0
+		cb.expected = 1
+		return cb
+	}
+	function updateRemoveCallback(cb, parent, vnode, context) {
+		if (!cb) return makeRemoveCallback(parent,vnode,context)
+		cb.expected++
+		return cb
+	}
 	function removeNode(parent, vnode, context, deferred) {
 		if (deferred === false) {
-			var expected = 0, called = 0
-			var callback = function() {
-				if (++called === expected) removeNode(parent, vnode, context, true)
-			}
+			var callback
 			if (vnode.attrs && vnode.attrs.onbeforeremove) {
-				expected++
+				callback = updateRemoveCallback(callback, parent, vnode, context)
 				vnode.attrs.onbeforeremove.call(vnode.state, vnode, callback)
 			}
 			if (typeof vnode.tag !== "string" && vnode.tag.onbeforeremove) {
-				expected++
+				callback = updateRemoveCallback(callback, parent, vnode, context)
 				vnode.tag.onbeforeremove.call(vnode.state, vnode, callback)
 			}
-			if (expected > 0) return
+			if (callback) return
 		}
 
 		onremove(vnode)
