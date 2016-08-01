@@ -768,6 +768,17 @@ o.spec("stream", function() {
 			o(Stream.stream().toJSON()).equals(undefined)
 		})
 	})
+	o.spec("mixin", function() {
+		o("adds a method", function() {
+			var spy = o.spy()
+			Stream.mixin({spy: spy})
+			var s = Stream.stream()
+			o(s.spy).equals(spy)
+			s.spy(1)
+			o(spy.this).equals(s)
+			o(spy.args[0]).equals(1)
+		})
+	})
 	o.spec("map", function() {
 		o("works", function() {
 			var stream = Stream.stream()

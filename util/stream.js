@@ -1,6 +1,6 @@
 "use strict"
 
-var guid = 0, noop = function() {}, HALT = {}
+var guid = 0, noop = function() {}, HALT = {}, methodNames = [], methods = []
 function createStream() {
 	function stream() {
 		if (arguments.length > 0) updateStream(stream, arguments[0], undefined)
@@ -18,6 +18,7 @@ function initStream(stream, args) {
 	stream.map = map, stream.ap = ap, stream.of = createStream
 	stream.valueOf = valueOf, stream.toJSON = toJSON, stream.toString = valueOf
 	stream.run = run, stream.catch = doCatch
+	for (var i = 0; i < methods.length; methods++) stream[methodNames[i]] = methods[i]
 
 	Object.defineProperties(stream, {
 		error: {get: function() {
@@ -174,6 +175,18 @@ function ap(stream) {return combine(function(s1, s2) {return s1()(s2())}, [this,
 function valueOf() {return this._state.value}
 function toJSON() {return JSON.stringify(this._state.value)}
 
+function mixin(extension) {
+	for (var name in extension) {
+		var i = methodNames.indexOf(name)
+		if (i === -1) {
+			methodNames.push(name)
+			methods.push(extension[name])
+		} else {
+			methods[i] = extension[name]
+		}
+	}
+}
+
 function active(stream) {return stream._state.state === 1}
 function changed(stream) {return stream._state.changed}
 function notEnded(stream) {return stream._state.state !== 2}
@@ -191,4 +204,4 @@ function merge(streams) {
 	}, streams)
 }
 
-module.exports = {stream: createStream, merge: merge, combine: combine, reject: reject, HALT: HALT}
+module.exports = {stream: createStream, merge: merge, combine: combine, reject: reject, mixin: mixin, HALT: HALT}
