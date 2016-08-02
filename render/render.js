@@ -335,13 +335,12 @@ module.exports = function($window) {
 			var callback = function() {
 				if (++called === expected) removeNode(parent, vnode, context, true)
 			}
-			var removables = [vnode]
+			var removables = [vnode], hooks = []
 			while (removables[0]) {
 				var removable = removables.shift()
-
 				if (removable.attrs && removable.attrs.onbeforeremove) {
 					expected++
-					removable.attrs.onbeforeremove.call(removable.state, removable, callback)
+					hooks.push(removable.attrs.onbeforeremove.bind(removable.state, removable, callback))
 				}
 				if (removable.tag && typeof removable.tag !== "string" && removable.tag.onbeforeremove) {
 					expected++
@@ -353,6 +352,7 @@ module.exports = function($window) {
 					}
 				}
 			}
+			for (var i = 0; i < hooks.length; i++) hooks[i]()
 			if (expected > 0) return
 		}
 
