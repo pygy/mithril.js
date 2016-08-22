@@ -334,33 +334,36 @@ o.spec("route", function() {
 					})
 				})
 
-				o("route match supersedes a pending onmatch", function(done) {
-					var pending = false
-					var superseded = false
+				o("matched routes cannot resolve once superseded", function(done) {
+					var resolveA = undefined
+					var resolved = false
+					var Component = {
+						view: function() {
+							resolved = true
+
+							return m("div")
+						}
+					}
 
 					$window.location.href = prefix + "/"
 					route(root, "/a", {
 						"/a" : {
-							onmatch: function() {
-								pending = true
+							onmatch: function(resolve) {
+								resolveA = resolve
 							}
 						},
 						"/b" : {
-							render: function(){
-								superseded = true
+							onmatch: function() {
+								resolveA(Component)
 							}
 						}
 					})
 
 					callAsync(function() {
-						o(pending).equals(true)
-
 						route.set("/b")
 
-						redraw.publish()
-
 						setTimeout(function() {
-							o(superseded).equals(true)
+							o(resolved).equals(false)
 
 							done()
 						}, FRAME_BUDGET)
