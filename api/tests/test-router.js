@@ -370,6 +370,32 @@ o.spec("route", function() {
 					})
 				})
 
+				o("onmatch can redirect to another route", function(done) {
+					var redirected = false
+
+					$window.location.href = prefix + "/"
+					route(root, "/a", {
+						"/a" : {
+							onmatch: function() {
+								route.set("/b")
+							}
+						},
+						"/b" : {
+							render: function(vnode){
+								redirected = true
+
+								return m("div")
+							}
+						}
+					})
+
+					callAsync(function() {
+						o(redirected).equals(true)
+
+						done()
+					})
+				})
+
 				o("RouteResolver without `onmatch` hook calls `render` appropriately", function(done) {
 					var renderCount = 0
 					var Component = {
