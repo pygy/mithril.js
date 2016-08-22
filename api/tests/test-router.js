@@ -334,6 +334,39 @@ o.spec("route", function() {
 					})
 				})
 
+				o("route match supersedes a pending onmatch", function(done) {
+					var pending = false
+					var superseded = false
+
+					$window.location.href = prefix + "/"
+					route(root, "/a", {
+						"/a" : {
+							onmatch: function() {
+								pending = true
+							}
+						},
+						"/b" : {
+							render: function(){
+								superseded = true
+							}
+						}
+					})
+
+					callAsync(function() {
+						o(pending).equals(true)
+
+						route.set("/b")
+
+						redraw.publish()
+
+						setTimeout(function() {
+							o(superseded).equals(true)
+
+							done()
+						}, FRAME_BUDGET)
+					})
+				})
+
 				o("RouteResolver without `onmatch` hook calls `render` appropriately", function(done) {
 					var renderCount = 0
 					var Component = {
