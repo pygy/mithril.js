@@ -695,8 +695,8 @@ o.spec("component", function() {
 			}
 		})
 	})
-	o("Alternative ways to specify componenents", function() {
-		o.only("Classes can be used as components", function() {
+	o.spec("Alternative ways to specify componenents", function() {
+		o("Classes can be used as components", function() {
 			function MyComponent(vnode){
 				o(vnode.state).equals(null)
 			}
