@@ -104,10 +104,17 @@ module.exports = function($window) {
 		var sentinel
 		if (typeof vnode.tag === "function") {
 			vnode.state = null
-			sentinel = vnode.tag
-			if (sentinel.$$reentrantLock$$ != null) return $emptyFragment
-			sentinel.$$reentrantLock$$ = true
-			vnode.state = (vnode.tag.prototype != null && typeof vnode.tag.prototype.view === "function") ? new vnode.tag(vnode) : vnode.tag(vnode)
+			if (vnode.tag.prototype != null && typeof vnode.tag.prototype.view === "function") {
+				sentinel = vnode.tag.prototype.view
+				if (sentinel.$$reentrantLock$$ != null) return $emptyFragment
+				sentinel.$$reentrantLock$$ = true
+				vnode.state = new vnode.tag(vnode)
+			} else {
+				sentinel = vnode.tag
+				if (sentinel.$$reentrantLock$$ != null) return $emptyFragment
+				sentinel.$$reentrantLock$$ = true
+				vnode.state = vnode.tag(vnode)
+			}
 		} else {
 			// For object literals since `Vnode()` always sets the `state` field.
 			vnode.state = Object.create(vnode.tag)
