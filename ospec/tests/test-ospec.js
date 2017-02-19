@@ -88,7 +88,10 @@ o.spec("ospec", function() {
 			o(spy.args[0]).equals(1)
 		})
 		o("spy wrapping", function() {
+			var callCount = 0
 			var spy = o.spy(function view(vnode){
+				o(spy.callCount).equals(++callCount)
+
 				this.drawn = true
 
 				return {tag: "div", children: vnode.children}

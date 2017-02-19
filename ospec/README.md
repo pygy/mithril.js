@@ -140,6 +140,8 @@ o.spec("call()", function() {
 
 ```
 
+`spy.callCount` is incremented before calling the wrapped function.
+
 ### Asynchronous tests
 
 If a test body function declares a named argument, the test is assumed to be asynchronous, and the argument is a function that must be called exactly one time to signal that the test has completed. As a matter of convention, this argument is typically named `done`.
