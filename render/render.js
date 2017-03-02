@@ -20,6 +20,7 @@ module.exports = function($window) {
 	}
 	function createNode(parent, vnode, hooks, ns, nextSibling) {
 		var tag = vnode.tag
+		vnode.reuse = true
 		if (typeof tag === "string") {
 			if (vnode.attrs != null) initLifecycle(vnode.attrs, vnode, hooks)
 			switch (tag) {
@@ -44,6 +45,8 @@ module.exports = function($window) {
 		temp.innerHTML = vnode.children
 		vnode.dom = temp.firstChild
 		vnode.domSize = temp.childNodes.length
+		vnode.reuse = false
+
 		var fragment = $doc.createDocumentFragment()
 		var child
 		while (child = temp.firstChild) {
@@ -57,9 +60,11 @@ module.exports = function($window) {
 		if (vnode.children != null) {
 			var children = vnode.children
 			createNodes(fragment, children, 0, children.length, hooks, null, ns)
+			vnode.reuse = vnode.reuse && children.length !== 0 && children[0].reuse
 		}
 		vnode.dom = fragment.firstChild
 		vnode.domSize = fragment.childNodes.length
+
 		insertNode(parent, fragment, nextSibling)
 		return fragment
 	}
@@ -81,6 +86,8 @@ module.exports = function($window) {
 		if (attrs != null) {
 			setAttrs(vnode, attrs, ns)
 		}
+
+		if (isCustomElement(vnode)) vnode.reuse = false
 
 		insertNode(parent, element, nextSibling)
 
@@ -231,10 +238,12 @@ module.exports = function($window) {
 		}
 	}
 	function updateNode(parent, old, vnode, hooks, nextSibling, recycling, ns) {
+		if (recycling && !old.reuse) return createNode(parent, vnode, hooks, ns, nextSibling)
 		var oldTag = old.tag, tag = vnode.tag
 		if (oldTag === tag) {
 			vnode.state = old.state
 			vnode.events = old.events
+			vnode.reuse = old.reuse
 			if (!recycling && shouldNotUpdate(vnode, old)) return
 			if (typeof oldTag === "string") {
 				if (vnode.attrs != null) {
@@ -322,6 +331,7 @@ module.exports = function($window) {
 			else updateNode(parent, old.instance, vnode.instance, hooks, nextSibling, recycling, ns)
 			vnode.dom = vnode.instance.dom
 			vnode.domSize = vnode.instance.domSize
+			vnode.reuse = vnode.instance.reuse && vnode.reuse
 		}
 		else if (old.instance != null) {
 			removeNode(old.instance, null)
@@ -402,6 +412,7 @@ module.exports = function($window) {
 	function removeNode(vnode, context) {
 		var expected = 1, called = 0
 		if (vnode.attrs && vnode.attrs.onbeforeremove) {
+			vnode.reuse = false
 			var result = vnode.attrs.onbeforeremove.call(vnode.state, vnode)
 			if (result != null && typeof result.then === "function") {
 				expected++
@@ -409,6 +420,7 @@ module.exports = function($window) {
 			}
 		}
 		if (typeof vnode.tag !== "string" && vnode.state.onbeforeremove) {
+			vnode.reuse = false
 			var result = vnode.state.onbeforeremove(vnode)
 			if (result != null && typeof result.then === "function") {
 				expected++
@@ -428,7 +440,7 @@ module.exports = function($window) {
 						}
 					}
 					removeNodeFromDOM(vnode.dom)
-					if (context != null && vnode.domSize == null && !hasIntegrationMethods(vnode.attrs) && typeof vnode.tag === "string") { //TODO test custom elements
+					if (context != null && vnode.reuse) { //TODO test custom elements
 						if (!context.pool) context.pool = [vnode]
 						else context.pool.push(vnode)
 					}
@@ -441,8 +453,14 @@ module.exports = function($window) {
 		if (parent != null) parent.removeChild(node)
 	}
 	function onremove(vnode) {
-		if (vnode.attrs && vnode.attrs.onremove) vnode.attrs.onremove.call(vnode.state, vnode)
-		if (typeof vnode.tag !== "string" && vnode.state.onremove) vnode.state.onremove(vnode)
+		if (vnode.attrs && vnode.attrs.onremove) {
+			vnode.reuse = false
+			vnode.attrs.onremove.call(vnode.state, vnode)
+		}
+		if (typeof vnode.tag !== "string" && vnode.state.onremove) {
+			vnode.reuse = false
+			vnode.state.onremove(vnode)
+		}
 		if (vnode.instance != null) onremove(vnode.instance)
 		else {
 			var children = vnode.children
@@ -525,10 +543,7 @@ module.exports = function($window) {
 		return attr === "href" || attr === "list" || attr === "form" || attr === "width" || attr === "height"// || attr === "type"
 	}
 	function isCustomElement(vnode){
-		return vnode.attrs.is || vnode.tag.indexOf("-") > -1
-	}
-	function hasIntegrationMethods(source) {
-		return source != null && (source.oncreate || source.onupdate || source.onbeforeremove || source.onremove)
+		return vnode.attrs != null && vnode.attrs.is != null || vnode.tag.indexOf("-") > -1
 	}
 
 	//style
@@ -573,15 +588,27 @@ module.exports = function($window) {
 	//lifecycle
 	function initLifecycle(source, vnode, hooks) {
 		if (typeof source.oninit === "function") source.oninit.call(vnode.state, vnode)
-		if (typeof source.oncreate === "function") hooks.push(source.oncreate.bind(vnode.state, vnode))
+		if (typeof source.oncreate === "function") {
+			vnode.reuse = false
+			hooks.push(source.oncreate.bind(vnode.state, vnode))
+		}
 	}
 	function updateLifecycle(source, vnode, hooks) {
-		if (typeof source.onupdate === "function") hooks.push(source.onupdate.bind(vnode.state, vnode))
+		if (typeof source.onupdate === "function") {
+			vnode.reuse = false
+			hooks.push(source.onupdate.bind(vnode.state, vnode))
+		}
 	}
 	function shouldNotUpdate(vnode, old) {
 		var forceVnodeUpdate, forceComponentUpdate
-		if (vnode.attrs != null && typeof vnode.attrs.onbeforeupdate === "function") forceVnodeUpdate = vnode.attrs.onbeforeupdate.call(vnode.state, vnode, old)
-		if (typeof vnode.tag !== "string" && typeof vnode.state.onbeforeupdate === "function") forceComponentUpdate = vnode.state.onbeforeupdate(vnode, old)
+		if (vnode.attrs != null && typeof vnode.attrs.onbeforeupdate === "function") {
+			vnode.reuse = false
+			forceVnodeUpdate = vnode.attrs.onbeforeupdate.call(vnode.state, vnode, old)
+		}
+		if (typeof vnode.tag !== "string" && typeof vnode.state.onbeforeupdate === "function") {
+			vnode.reuse = false
+			forceComponentUpdate = vnode.state.onbeforeupdate(vnode, old)
+		}
 		if (!(forceVnodeUpdate === undefined && forceComponentUpdate === undefined) && !forceVnodeUpdate && !forceComponentUpdate) {
 			vnode.dom = old.dom
 			vnode.domSize = old.domSize
