@@ -20,7 +20,8 @@ o.spec("Router.setPath", function() {
 				})
 
 				o("setPath calls onRouteChange asynchronously", function(done) {
-					$window.location.href = prefix + "/a"
+					$window.location.loadAs(prefix + "/a")
+
 					router.defineRoutes({"/a": {data: 1}, "/b": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -34,7 +35,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("setPath calls onFail asynchronously", function(done) {
-					$window.location.href = prefix + "/a"
+					$window.location.loadAs(prefix + "/a")
 					router.defineRoutes({"/a": {data: 1}, "/b": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -48,7 +49,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route via API", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -60,7 +61,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route w/ escaped unicode", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/ö/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -72,7 +73,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route w/ unicode", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/ö/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -85,7 +86,7 @@ o.spec("Router.setPath", function() {
 				})
 
 				o("sets route on fallback mode", function(done) {
-					$window.location.href = "file://" + prefix + "/test"
+					$window.location.loadAs("file://" + prefix + "/test")
 
 					router = new Router($window)
 					router.prefix = prefix
@@ -100,13 +101,14 @@ o.spec("Router.setPath", function() {
 						done()
 					})
 				})
-				o("sets route via pushState/onpopstate", function(done) {
-					$window.location.href = prefix + "/test"
+				o("sets route via pushState/onpopstate/onhashchange", function(done) {
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
 						$window.history.pushState(null, null, prefix + "/other/x/y/z?c=d#e=f")
-						$window.onpopstate()
+						if (router.prefix[0] === "#") $window.onhashchange()
+						else $window.onpopstate()
 
 						o(router.getPath()).equals("/other/x/y/z?c=d#e=f")
 						
@@ -114,7 +116,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets parameterized route", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -126,7 +128,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("replace:true works", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -139,7 +141,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("replace:false works", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -154,7 +156,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("state works", function(done) {
-					$window.location.href = prefix + "/test"
+					$window.location.loadAs(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {

@@ -31,7 +31,7 @@ module.exports = function(options) {
 		if (protocol === "file:") return protocol + "//" + pathname + search + hash
 		return protocol + "//" + hostname + prefix(":", port) + pathname + search + hash
 	}
-	function setURL(value) {
+	function setURL(value, loading) {
 		var data = parseURL(value, {protocol: protocol, hostname: hostname, port: port, pathname: pathname})
 		var isNew = false
 		if (data.protocol != null && data.protocol !== protocol) protocol = data.protocol, isNew = true
@@ -41,7 +41,7 @@ module.exports = function(options) {
 		if (data.search != null && data.search !== search) search = data.search, isNew = true
 		if (data.hash != null && data.hash !== hash) {
 			hash = data.hash
-			if (!isNew) {
+			if (!isNew && !loading) {
 				hashchange()
 			}
 		}
@@ -148,6 +148,12 @@ module.exports = function(options) {
 			past.push({url: url, isNew: isNew})
 			future = []
 		},
+		loadAs(value) {
+			var url = getURL()
+			setURL(value, true)
+			past.push({url: url, isNew: true})
+			future = []
+		}
 	}
 	$window.history = {
 		pushState: function(state, title, url) {
