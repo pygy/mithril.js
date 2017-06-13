@@ -962,7 +962,7 @@ var coreRenderer = function($window) {
 		if (!dom) throw new Error("Ensure the DOM element being passed to m.route/m.mount/m.render is not undefined.")
 		var hooks = []
 		var active = $doc.activeElement
-		// First time0 rendering into a node clears it out
+		// First time rendering0 into a node clears it out
 		if (dom.vnodes == null) dom.textContent = ""
 		if (!Array.isArray(vnodes)) vnodes = [vnodes]
 		updateNodes(dom, dom.vnodes, Vnode.normalizeChildren(vnodes), false, hooks, null, undefined)
@@ -974,43 +974,43 @@ var coreRenderer = function($window) {
 }
 function throttle(callback) {
 	//60fps translates to 16.6ms, round it down since setTimeout requires int
-	var time = 16
+	var delay = 16
 	var last = 0, pending = null
 	var timeout = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setTimeout
 	return function() {
-		var now = Date.now()
-		if (last === 0 || now - last >= time) {
-			last = now
-			callback()
-		}
-		else if (pending === null) {
+		var elapsed = Date.now() - last
+		if (pending === null) {
 			pending = timeout(function() {
 				pending = null
 				callback()
 				last = Date.now()
-			}, time - (now - last))
+			}, delay - elapsed)
 		}
 	}
 }
-var _11 = function($window) {
+var _11 = function($window, throttleMock) {
 	var renderService = coreRenderer($window)
 	renderService.setEventCallback(function(e) {
 		if (e.redraw !== false) redraw()
 	})
 	var callbacks = []
+	var rendering = false
 	function subscribe(key1, callback) {
 		unsubscribe(key1)
-		callbacks.push(key1, throttle(callback))
+		callbacks.push(key1, callback)
 	}
 	function unsubscribe(key1) {
 		var index = callbacks.indexOf(key1)
 		if (index > -1) callbacks.splice(index, 2)
 	}
-	function redraw() {
-		for (var i = 1; i < callbacks.length; i += 2) {
-			callbacks[i]()
-		}
+	function sync() {
+		if (rendering) throw new Error("Nested m.redraw.sync() call")
+		rendering = true
+		for (var i = 1; i < callbacks.length; i+=2) try {callbacks[i]()} catch (e) {/*noop*/}
+		rendering = false
 	}
+	var redraw = (throttleMock || throttle)(sync)
+	redraw.sync = sync
 	return {subscribe: subscribe, unsubscribe: unsubscribe, redraw: redraw, render: renderService.render}
 }
 var redrawService = _11(window)
@@ -1029,7 +1029,7 @@ var _16 = function(redrawService0) {
 			redrawService0.render(root, Vnode(component))
 		}
 		redrawService0.subscribe(root, run0)
-		redrawService0.redraw()
+		run0()
 	}
 }
 m.mount = _16(redrawService)
@@ -1166,9 +1166,14 @@ var _20 = function($window, redrawService0) {
 	var render1, component, attrs3, currentPath, lastUpdate
 	var route = function(root, defaultRoute, routes) {
 		if (root == null) throw new Error("Ensure the DOM element that was passed to `m.route` is not undefined")
-		var run1 = function() {
+		function run1() {
 			if (render1 != null) redrawService0.render(root, render1(Vnode(component, attrs3.key, attrs3)))
 		}
+		var redraw2 = function() {
+			run1()
+			redraw2 = redrawService0.redraw
+		}
+		redrawService0.subscribe(root, run1)
 		var bail = function(path) {
 			if (path !== defaultRoute) routeService.setPath(defaultRoute, null, {replace: true})
 			else throw new Error("Could not resolve default route " + defaultRoute)
@@ -1179,7 +1184,7 @@ var _20 = function($window, redrawService0) {
 				component = comp != null && (typeof comp.view === "function" || typeof comp === "function")? comp : "div"
 				attrs3 = params, currentPath = path, lastUpdate = null
 				render1 = (routeResolver.render || identity).bind(routeResolver)
-				run1()
+				redraw2()
 			}
 			if (payload.view || typeof payload === "function") update({}, payload)
 			else {
@@ -1191,7 +1196,6 @@ var _20 = function($window, redrawService0) {
 				else update(payload, "div")
 			}
 		}, bail)
-		redrawService0.subscribe(root, run1)
 	}
 	route.set = function(path, data, options) {
 		if (lastUpdate != null) options = {replace: true}
