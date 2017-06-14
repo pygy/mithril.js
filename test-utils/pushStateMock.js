@@ -1,18 +1,7 @@
 "use strict"
 
 var parseURL = require("../test-utils/parseURL")
-var callAsync = require("../test-utils/callAsync")
-
-function debouncedAsync(f) {
-	var ref
-	return function() {
-		if (ref != null) return
-		ref = callAsync(function(){
-			ref = null
-			f()
-		})
-	}
-}
+var debouncedAsync = require("../test-utils/debouncedAsync")
 
 module.exports = function(options) {
 	if (options == null) options = {}
@@ -148,12 +137,11 @@ module.exports = function(options) {
 			past.push({url: url, isNew: isNew})
 			future = []
 		},
-		loadAs(value) {
-			var url = getURL()
-			setURL(value, true)
-			past.push({url: url, isNew: true})
-			future = []
-		}
+	}
+	$window.__loadAs = function(value) {
+		setURL(value, true)
+		past = [{url: getURL(), isNew: true, state: null, title: null}]
+		future = []
 	}
 	$window.history = {
 		pushState: function(state, title, url) {

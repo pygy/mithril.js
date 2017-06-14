@@ -11,8 +11,8 @@ var apiRouter = require("../../api/router")
 var Promise = require("../../promise/promise")
 
 o.spec("route", function() {
-	void [{protocol: "http:", hostname: "localhost"}, {protocol: "file:", hostname: "/"}].forEach(function(env) {
-		void ["#", "?", "", "#!", "?!", "/foo"].forEach(function(prefix) {
+	void [/*{protocol: "http:", hostname: "localhost"},*/ {protocol: "file:", hostname: "/"}].forEach(function(env) {
+		void ["#"/*, "?", "", "#!", "?!", "/foo"*/].forEach(function(prefix) {
 			o.spec("using prefix `" + prefix + "` starting on " + env.protocol + "//" + env.hostname, function() {
 				var FRAME_BUDGET = Math.floor(1000 / 60)
 				var $window, root, redrawService, route
@@ -38,7 +38,7 @@ o.spec("route", function() {
 				})
 
 				o("renders into `root`", function() {
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							view: function() {
@@ -53,7 +53,7 @@ o.spec("route", function() {
 				o("routed mount points can redraw synchronously (POJO component)", function() {
 					var view = o.spy()
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {"/":{view:view}})
 
 					o(view.callCount).equals(1)
@@ -70,7 +70,7 @@ o.spec("route", function() {
 					var Cmp = function(){}
 					Cmp.prototype.view = view
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {"/":Cmp})
 
 					o(view.callCount).equals(1)
@@ -86,7 +86,7 @@ o.spec("route", function() {
 
 					function Cmp() {return {view: view}}
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {"/":Cmp})
 
 					o(view.callCount).equals(1)
@@ -110,14 +110,14 @@ o.spec("route", function() {
 					})
 
 					callAsync(function() {
-						// o(root.firstChild.nodeName).equals("DIV")
+						o(root.firstChild.nodeName).equals("DIV")
 
-						// o(route.get()).equals("/a")
+						o(route.get()).equals("/a")
 
-						// $window.history.back()
+						$window.history.back()
 
-						// o($window.location.pathname).equals("/")
-						// o($window.location.hostname).equals("old.com")
+						o($window.location.pathname).equals("/")
+						o($window.location.hostname).equals("old.com")
 
 						done()
 					})
@@ -145,7 +145,7 @@ o.spec("route", function() {
 					var onupdate = o.spy()
 					var oninit = o.spy()
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							view: function() {
@@ -172,7 +172,7 @@ o.spec("route", function() {
 
 					e.initEvent("click", true, true)
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							view: function() {
@@ -209,7 +209,7 @@ o.spec("route", function() {
 
 					e.initEvent("click", true, true)
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							view: function() {
@@ -241,7 +241,7 @@ o.spec("route", function() {
 
 					e.initEvent("click", true, true)
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							view: function() {
@@ -295,7 +295,7 @@ o.spec("route", function() {
 						},
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : resolver
 					})
@@ -336,7 +336,7 @@ o.spec("route", function() {
 						},
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : resolver
 					})
@@ -372,7 +372,7 @@ o.spec("route", function() {
 						},
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : resolver
 					})
@@ -408,7 +408,7 @@ o.spec("route", function() {
 						},
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : resolver
 					})
@@ -437,7 +437,7 @@ o.spec("route", function() {
 						},
 					}
 
-					$window.location.href = prefix + "/test/1"
+					$window.__loadAs(prefix + "/test/1")
 					route(root, "/default", {
 						"/default" : {view: spy},
 						"/test/:id" : resolver
@@ -461,7 +461,7 @@ o.spec("route", function() {
 						}
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : {
 							onmatch: function(args, requestedPath) {
@@ -490,7 +490,7 @@ o.spec("route", function() {
 							return m("div")
 						}
 					}
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id": {render: function(vnode) {
 							return m(Component, {key: vnode.attrs.id})
@@ -514,7 +514,7 @@ o.spec("route", function() {
 						}
 					}
 
-					$window.location.href = prefix + "/abc"
+					$window.__loadAs(prefix + "/abc")
 					route(root, "/abc", {
 						"/:id" : {
 							render: function(vnode) {
@@ -532,7 +532,7 @@ o.spec("route", function() {
 				})
 
 				o("RouteResolver `render` does not have component semantics", function(done) {
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							render: function() {
@@ -567,7 +567,7 @@ o.spec("route", function() {
 						}
 					}
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							onmatch: function() {
@@ -603,7 +603,7 @@ o.spec("route", function() {
 						}
 					}
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/" : {
 							onmatch: function() {
@@ -633,7 +633,7 @@ o.spec("route", function() {
 					var redirected = false
 					var render = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
@@ -661,7 +661,7 @@ o.spec("route", function() {
 					var render = o.spy()
 					var view = o.spy(function() {return m("div")})
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
@@ -683,7 +683,7 @@ o.spec("route", function() {
 							o(redirected).equals(true)
 							o(view.callCount).equals(1)
 							o(root.childNodes.length).equals(1)
-							// o(root.firstChild.nodeName).equals("DIV")
+							o(root.firstChild.nodeName).equals("DIV")
 
 							done()
 						})
@@ -694,7 +694,7 @@ o.spec("route", function() {
 					var redirected = false
 					var render = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
@@ -722,7 +722,7 @@ o.spec("route", function() {
 					var render = o.spy()
 					var view = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
@@ -760,7 +760,7 @@ o.spec("route", function() {
 					var render = o.spy()
 					var view = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
@@ -793,12 +793,13 @@ o.spec("route", function() {
 				o("onmatch can redirect w/ window.history.back()", function(done) {
 
 					var render = o.spy()
-					var component = {view: o.spy()}
+					var component = {view: o.spy(function(){console.log("view a")})}
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a" : {
 							onmatch: function() {
+								console.log('onmatch a')
 								return component
 							},
 							render: function(vnode) {
@@ -814,11 +815,20 @@ o.spec("route", function() {
 						}
 					})
 
+					var ohc = $window.onhashchange
+					$window.onhashchange = function(){
+						console.log("ohc1", $window.location.href, route.get())
+						ohc.apply(this, arguments)
+						console.log("ohc2", $window.location.href, route.get())
+					}
+
 					callAsync(function() {
+						console.log('set b')
 						route.set("/b")
 						callAsync(function() {
 							callAsync(function() {
 								callAsync(function() {
+									console.log('getroute', route.get())
 									o(render.callCount).equals(0)
 									o(component.view.callCount).equals(2)
 
@@ -833,7 +843,7 @@ o.spec("route", function() {
 					var redirected = false
 					var render = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/b", {
 						"/a" : {
 							onmatch: function() {
@@ -863,7 +873,7 @@ o.spec("route", function() {
 					var redirected = false
 					var render = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/b", {
 						"/a" : {
 							onmatch: function() {
@@ -892,7 +902,7 @@ o.spec("route", function() {
 					var redirected = false
 					var render = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/b", {
 						"/a" : {
 							onmatch: function() {
@@ -923,7 +933,7 @@ o.spec("route", function() {
 						return new Promise(function() {})
 					})
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/", {
 						"/a": {view: view},
 						"/b": {onmatch: onmatch}
@@ -958,7 +968,7 @@ o.spec("route", function() {
 						})
 					})
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a": {
 							onmatch: onmatchA,
@@ -1008,7 +1018,7 @@ o.spec("route", function() {
 					var onmatch = o.spy()
 					var render = o.spy(function() {return m("div")})
 
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/": {
 							onmatch: onmatch,
@@ -1034,7 +1044,7 @@ o.spec("route", function() {
 				})
 
 				o("m.route.get() returns the last fully resolved route (#1276)", function(done){
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 
 					route(root, "/", {
 						"/": {view: function() {}},
@@ -1057,7 +1067,7 @@ o.spec("route", function() {
 				})
 
 				o("routing with RouteResolver works more than once", function(done) {
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a": {
 							render: function() {
@@ -1087,7 +1097,7 @@ o.spec("route", function() {
 				o("calling route.set invalidates pending onmatch resolution", function(done) {
 					var rendered = false
 					var resolved
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a": {
 							onmatch: function() {
@@ -1128,7 +1138,7 @@ o.spec("route", function() {
 				o("route changes activate onbeforeremove", function(done) {
 					var spy = o.spy()
 
-					$window.location.href = prefix + "/a"
+					$window.__loadAs(prefix + "/a")
 					route(root, "/a", {
 						"/a": {
 							onbeforeremove: spy,
@@ -1185,7 +1195,7 @@ o.spec("route", function() {
 					timeout(200)
 
 					var i = 0
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 					route(root, "/", {
 						"/": {view: function() {i++}}
 					})
@@ -1206,7 +1216,7 @@ o.spec("route", function() {
 				})
 
 				o("m.route.param is available outside of route handlers", function(done) {
-					$window.location.href = prefix + "/"
+					$window.__loadAs(prefix + "/")
 
 					route(root, "/1", {
 						"/:id" : {
