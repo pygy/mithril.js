@@ -1099,7 +1099,7 @@ var coreRouter = function($window) {
 	}
 	var router = {prefix: "#!"}
 	router.getPath = function() {
-		var type2 = router.prefix.charAt(0)
+		var type2 = router.prefix[0]
 		switch (type2) {
 			case "#": return normalize1("hash").slice(router.prefix.length)
 			case "?": return normalize1("search").slice(router.prefix.length) + normalize1("hash")
@@ -1120,7 +1120,7 @@ var coreRouter = function($window) {
 		if (query) path += "?" + query
 		var hash = buildQueryString(hashData)
 		if (hash) path += "#" + hash
-		if (supportsPushState) {
+		if (router.prefix[0] !== "#" && supportsPushState) {
 			var state = options ? options.state : null
 			var title = options ? options.title : null
 			$window.onpopstate()
@@ -1154,7 +1154,7 @@ var coreRouter = function($window) {
 			}
 			reject(path, params)
 		}
-		if (supportsPushState) $window.onpopstate = debounceAsync(resolveRoute)
+		if (router.prefix[0] !== "#" && supportsPushState) $window.onpopstate = debounceAsync(resolveRoute)
 		else if (router.prefix.charAt(0) === "#") $window.onhashchange = resolveRoute
 		resolveRoute()
 	}
