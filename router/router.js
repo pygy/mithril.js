@@ -42,7 +42,7 @@ module.exports = function($window) {
 
 	var router = {prefix: "#!"}
 	router.getPath = function() {
-		var type = router.prefix.charAt(0)
+		var type = router.prefix[0]
 		switch (type) {
 			case "#": return normalize("hash").slice(router.prefix.length)
 			case "?": return normalize("search").slice(router.prefix.length) + normalize("hash")
@@ -66,7 +66,7 @@ module.exports = function($window) {
 		var hash = buildQueryString(hashData)
 		if (hash) path += "#" + hash
 
-		if (supportsPushState) {
+		if (router.prefix[0] !== "#" && supportsPushState) {
 			var state = options ? options.state : null
 			var title = options ? options.title : null
 			$window.onpopstate()
@@ -104,7 +104,7 @@ module.exports = function($window) {
 			reject(path, params)
 		}
 
-		if (supportsPushState) $window.onpopstate = debounceAsync(resolveRoute)
+		if (router.prefix[0] !== "#" && supportsPushState) $window.onpopstate = debounceAsync(resolveRoute)
 		else if (router.prefix.charAt(0) === "#") $window.onhashchange = resolveRoute
 		resolveRoute()
 	}
