@@ -11,16 +11,17 @@ o.spec("Router.setPath", function() {
 			o.spec("using prefix `" + prefix + "` starting on " + env.protocol + "//" + env.hostname, function() {
 				var $window, router, onRouteChange, onFail
 
-				o.beforeEach(function() {
+				function init(href) {
+					env.href = href || ""
 					$window = pushStateMock(env)
 					router = new Router($window)
 					router.prefix = prefix
 					onRouteChange = o.spy()
 					onFail = o.spy()
-				})
+				}
 
 				o("setPath calls onRouteChange asynchronously", function(done) {
-					$window.location.href = prefix + "/a"
+					init(prefix + "/a")
 					router.defineRoutes({"/a": {data: 1}, "/b": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -34,7 +35,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("setPath calls onFail asynchronously", function(done) {
-					$window.location.href = prefix + "/a"
+					init(prefix + "/a")
 					router.defineRoutes({"/a": {data: 1}, "/b": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -48,7 +49,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route via API", function(done) {
-					$window.location.href = prefix + "/test"
+					init(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -60,7 +61,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route w/ escaped unicode", function(done) {
-					$window.location.href = prefix + "/test"
+					init(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/ö/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -72,7 +73,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route w/ unicode", function(done) {
-					$window.location.href = prefix + "/test"
+					init(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/ö/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -85,7 +86,7 @@ o.spec("Router.setPath", function() {
 				})
 
 				o("sets route on fallback mode", function(done) {
-					$window.location.href = "file://" + prefix + "/test"
+					init("file://" + prefix + "/test")
 
 					router = new Router($window)
 					router.prefix = prefix
@@ -101,12 +102,13 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets route via pushState/onpopstate", function(done) {
-					$window.location.href = prefix + "/test"
+					init(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
 						$window.history.pushState(null, null, prefix + "/other/x/y/z?c=d#e=f")
-						$window.onpopstate()
+						if (router.prefix[0] === "#") $window.onhashchange()
+						else $window.onpopstate()
 
 						o(router.getPath()).equals("/other/x/y/z?c=d#e=f")
 						
@@ -114,7 +116,7 @@ o.spec("Router.setPath", function() {
 					})
 				})
 				o("sets parameterized route", function(done) {
-					$window.location.href = prefix + "/test"
+					init(prefix + "/test")
 					router.defineRoutes({"/test": {data: 1}, "/other/:a/:b...": {data: 2}}, onRouteChange, onFail)
 
 					callAsync(function() {
@@ -125,46 +127,51 @@ o.spec("Router.setPath", function() {
 						done()
 					})
 				})
-				o("replace:true works", function(done) {
-					$window.location.href = prefix + "/test"
-					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
+				if (prefix[0] !== "#") {
+					o("replace:true works", function(done) {
+						// FIXME: somehow, pushstate doesn't work correctly
+						// when called on the initial path.
+						init("")
+						$window.location.href = prefix + "/test"
+						router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
-					callAsync(function() {
-						router.setPath("/other", null, {replace: true})
-						$window.history.back()
+						callAsync(function() {
+							router.setPath("/other", null, {replace: true})
+							$window.history.back()
 
-						o($window.location.href).equals(env.protocol + "//" + (env.hostname === "/" ? "" : env.hostname) + "/")
-						
-						done()
+							o($window.location.href).equals(env.protocol + "//" + (env.hostname === "/" ? "" : env.hostname) + "/")
+							
+							done()
+						})
 					})
-				})
-				o("replace:false works", function(done) {
-					$window.location.href = prefix + "/test"
-					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
+					o("replace:false works", function(done) {
+						init(prefix + "/test")
+						router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
-					callAsync(function() {
-						router.setPath("/other", null, {replace: false})
-						$window.history.back()
+						callAsync(function() {
+							router.setPath("/other", null, {replace: false})
+							$window.history.back()
 
-						var slash = prefix[0] === "/" ? "" : "/"
+							var slash = prefix[0] === "/" ? "" : "/"
 
-						o($window.location.href).equals(env.protocol + "//" + (env.hostname === "/" ? "" : env.hostname) + slash + (prefix ? prefix + "/" : "") + "test")
-						
-						done()
+							o($window.location.href).equals(env.protocol + "//" + (env.hostname === "/" ? "" : env.hostname) + slash + (prefix ? prefix + "/" : "") + "test")
+							
+							done()
+						})
 					})
-				})
-				o("state works", function(done) {
-					$window.location.href = prefix + "/test"
-					router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
+					o("state works", function(done) {
+						init(prefix + "/test")
+						router.defineRoutes({"/test": {data: 1}, "/other": {data: 2}}, onRouteChange, onFail)
 
-					callAsync(function() {
-						router.setPath("/other", null, {state: {a: 1}})
+						callAsync(function() {
+							router.setPath("/other", null, {state: {a: 1}})
 
-						o($window.history.state).deepEquals({a: 1})
-						
-						done()
+							o($window.history.state).deepEquals({a: 1})
+							
+							done()
+						})
 					})
-				})
+				}
 			})
 		})
 	})
