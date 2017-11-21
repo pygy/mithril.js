@@ -870,7 +870,7 @@ o.spec("updateNodes", function() {
 
 		o(onupdate.callCount).equals(0)
 	})
-	o("Keyed cached elements are re-initialized when brought back from the pool", function () {
+	o("keyed cached elements are re-initialized when brought back from the pool", function () {
 		var onupdate = o.spy()
 		var oncreate = o.spy()
 		var cached = {
@@ -886,7 +886,7 @@ o.spec("updateNodes", function() {
 		o(onupdate.callCount).equals(0)
 	})
 
-	o("Uneyed cached elements are re-initialized when brought back from the pool", function () {
+	o("uneyed cached elements are re-initialized when brought back from the pool", function () {
 		var onupdate = o.spy()
 		var oncreate = o.spy()
 		var cached = {
@@ -902,7 +902,7 @@ o.spec("updateNodes", function() {
 		o(onupdate.callCount).equals(0)
 	})
 
-	o("Keyed cached elements are re-initialized when brought back from nested pools", function () {
+	o("keyed cached elements are re-initialized when brought back from nested pools", function () {
 		var onupdate = o.spy()
 		var oncreate = o.spy()
 		var cached = {
@@ -919,7 +919,7 @@ o.spec("updateNodes", function() {
 		o(onupdate.callCount).equals(0)
 	})
 
-	o("Unkeyed cached elements are re-initialized when brought back from nested pools", function () {
+	o("unkeyed cached elements are re-initialized when brought back from nested pools", function () {
 		var onupdate = o.spy()
 		var oncreate = o.spy()
 		var cached = {
@@ -935,7 +935,6 @@ o.spec("updateNodes", function() {
 		o(oncreate.callCount).equals(2)
 		o(onupdate.callCount).equals(0)
 	})
-
 	o("null stays in place", function() {
 		var create = o.spy()
 		var update = o.spy()

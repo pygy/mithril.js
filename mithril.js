@@ -532,8 +532,8 @@ var coreRenderer = function($window) {
 		}
 	}
 	//update
-	function updateNodes(parent, old, vnodes, recycling, hooks, nextSibling, ns) {
-		if (old === vnodes || old == null && vnodes == null) return
+	function updateNodes(parent, old, vnodes, recyclingParent, hooks, nextSibling, ns) {
+		if (old === vnodes && !recyclingParent || old == null && vnodes == null) return
 		else if (old == null) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns)
 		else if (vnodes == null) removeNodes(old, 0, old.length, vnodes)
 		else {
@@ -547,40 +547,39 @@ var coreRenderer = function($window) {
 				}
 				if (isUnkeyed) {
 					for (var i = 0; i < old.length; i++) {
-						if (old[i] === vnodes[i]) continue
+						if (old[i] === vnodes[i] && !recyclingParent) continue
 						else if (old[i] == null && vnodes[i] != null) createNode(parent, vnodes[i], hooks, ns, getNextSibling(old, i + 1, nextSibling))
 						else if (vnodes[i] == null) removeNodes(old, i, i + 1, vnodes)
-						else updateNode(parent, old[i], vnodes[i], hooks, getNextSibling(old, i + 1, nextSibling), recycling, ns)
+						else updateNode(parent, old[i], vnodes[i], hooks, getNextSibling(old, i + 1, nextSibling), recyclingParent, ns)
 					}
 					return
 				}
 			}
-			recycling = recycling || isRecyclable(old, vnodes)
-			if (recycling) {
+			if (isRecyclable(old, vnodes)) {
 				var pool = old.pool
 				old = old.concat(old.pool)
 			}
-			var oldStart = 0, start = 0, oldEnd = old.length - 1, end = vnodes.length - 1, map
+			var oldStart = 0, start = 0, oldEnd = old.length - 1, end = vnodes.length - 1, map, oFromPool
 			while (oldEnd >= oldStart && end >= start) {
 				var o = old[oldStart], v = vnodes[start]
-				if (o === v && !recycling) oldStart++, start++
+				oFromPool = pool != null && oldStart >= old.length - pool.length
+				if (o === v && !oFromPool && !recyclingParent) oldStart++, start++
 				else if (o == null) oldStart++
 				else if (v == null) start++
 				else if (o.key === v.key) {
-					var shouldRecycle = (pool != null && oldStart >= old.length - pool.length) || ((pool == null) && recycling)
 					oldStart++, start++
-					updateNode(parent, o, v, hooks, getNextSibling(old, oldStart, nextSibling), shouldRecycle, ns)
-					if (recycling && o.tag === v.tag) insertNode(parent, toFragment(o), nextSibling)
+					updateNode(parent, o, v, hooks, getNextSibling(old, oldStart, nextSibling), oFromPool || recyclingParent, ns)
+					if (oFromPool && o.tag === v.tag) insertNode(parent, toFragment(o), nextSibling)
 				}
 				else {
 					var o = old[oldEnd]
-					if (o === v && !recycling) oldEnd--, start++
+					oFromPool = pool != null && oldEnd >= old.length - pool.length
+					if (o === v && !oFromPool && !recyclingParent) oldEnd--, start++
 					else if (o == null) oldEnd--
 					else if (v == null) start++
 					else if (o.key === v.key) {
-						var shouldRecycle = (pool != null && oldEnd >= old.length - pool.length) || ((pool == null) && recycling)
-						updateNode(parent, o, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), shouldRecycle, ns)
-						if (recycling || start < end) insertNode(parent, toFragment(o), getNextSibling(old, oldStart, nextSibling))
+						updateNode(parent, o, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), oFromPool || recyclingParent, ns)
+						if (oFromPool && o.tag === v.tag || start < end) insertNode(parent, toFragment(o), getNextSibling(old, oldStart, nextSibling))
 						oldEnd--, start++
 					}
 					else break
@@ -588,13 +587,13 @@ var coreRenderer = function($window) {
 			}
 			while (oldEnd >= oldStart && end >= start) {
 				var o = old[oldEnd], v = vnodes[end]
-				if (o === v && !recycling) oldEnd--, end--
+				oFromPool = pool != null && oldEnd >= old.length - pool.length
+				if (o === v && !oFromPool && !recyclingParent) oldEnd--, end--
 				else if (o == null) oldEnd--
 				else if (v == null) end--
 				else if (o.key === v.key) {
-					var shouldRecycle = (pool != null && oldEnd >= old.length - pool.length) || ((pool == null) && recycling)
-					updateNode(parent, o, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), shouldRecycle, ns)
-					if (recycling && o.tag === v.tag) insertNode(parent, toFragment(o), nextSibling)
+					updateNode(parent, o, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), oFromPool || recyclingParent, ns)
+					if (oFromPool && o.tag === v.tag) insertNode(parent, toFragment(o), nextSibling)
 					if (o.dom != null) nextSibling = o.dom
 					oldEnd--, end--
 				}
@@ -604,8 +603,8 @@ var coreRenderer = function($window) {
 						var oldIndex = map[v.key]
 						if (oldIndex != null) {
 							var movable = old[oldIndex]
-							var shouldRecycle = (pool != null && oldIndex >= old.length - pool.length) || ((pool == null) && recycling)
-							updateNode(parent, movable, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), shouldRecycle, ns)
+							oFromPool = pool != null && oldIndex >= old.length - pool.length
+							updateNode(parent, movable, v, hooks, getNextSibling(old, oldEnd + 1, nextSibling), oFromPool || recyclingParent, ns)
 							insertNode(parent, toFragment(movable), nextSibling)
 							old[oldIndex].skip = true
 							if (movable.dom != null) nextSibling = movable.dom
@@ -620,7 +619,14 @@ var coreRenderer = function($window) {
 				if (end < start) break
 			}
 			createNodes(parent, vnodes, start, end + 1, hooks, nextSibling, ns)
-			removeNodes(old, oldStart, oldEnd + 1, vnodes)
+			removeNodes(old, oldStart, Math.min(oldEnd + 1, pool == null ? old.length : old.length - pool.length), vnodes)
+			if (pool != null) {
+				var limit = Math.max(oldStart, old.length - pool.length)
+				for (; oldEnd >= limit; oldEnd--) {
+					if (old[oldEnd].skip) old[oldEnd].skip = false
+					else addToPool(old[oldEnd], vnodes)
+				}
+			}
 		}
 	}
 	function updateNode(parent, old, vnode, hooks, nextSibling, recycling, ns) {
@@ -821,10 +827,7 @@ var coreRenderer = function($window) {
 						}
 					}
 					removeNodeFromDOM(vnode.dom)
-					if (context != null && vnode.domSize == null && !hasIntegrationMethods(vnode.attrs) && typeof vnode.tag === "string") { //TODO test custom elements
-						if (!context.pool) context.pool = [vnode]
-						else context.pool.push(vnode)
-					}
+					addToPool(vnode, context)
 				}
 			}
 		}
@@ -832,6 +835,12 @@ var coreRenderer = function($window) {
 	function removeNodeFromDOM(node) {
 		var parent = node.parentNode
 		if (parent != null) parent.removeChild(node)
+	}
+	function addToPool(vnode, context) {
+		if (context != null && vnode.domSize == null && !hasIntegrationMethods(vnode.attrs) && typeof vnode.tag === "string") { //TODO test custom elements
+			if (!context.pool) context.pool = [vnode]
+			else context.pool.push(vnode)
+		}
 	}
 	function onremove(vnode) {
 		if (vnode.attrs && typeof vnode.attrs.onremove === "function") callHook.call(vnode.attrs.onremove, vnode)
