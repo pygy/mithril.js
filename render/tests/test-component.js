@@ -103,7 +103,7 @@ o.spec("component", function() {
 					var visible = true
 					var component = createComponent({
 						view: function() {
-							return visible ? {tag: "div"} : false
+							return visible ? {tag: "div"} : ""
 						}
 					})
 					render(root, [{tag: component}])
@@ -237,8 +237,7 @@ o.spec("component", function() {
 					})
 					render(root, [{tag: component}])
 
-					o(root.firstChild.nodeType).equals(3)
-					o(root.firstChild.nodeValue).equals("")
+					o(root.childNodes.length).equals(0)
 				})
 				o("can return null", function() {
 					var component = createComponent({
@@ -293,8 +292,7 @@ o.spec("component", function() {
 					})
 					render(root, [{tag: component}])
 
-					o(root.firstChild.nodeType).equals(3)
-					o(root.firstChild.nodeValue).equals("")
+					o(root.childNodes.length).equals(0)
 
 					try {
 						render(root, [{tag: component}])
