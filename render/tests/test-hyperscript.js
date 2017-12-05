@@ -347,7 +347,8 @@ o.spec("hyperscript", function() {
 		o("handles falsy boolean single child", function() {
 			var vnode = m("div", {}, [false])
 
-			o(vnode.text).equals("")
+			o(vnode.text).equals(undefined)
+			o(vnode.children).deepEquals([null])
 		})
 		o("handles null single child", function() {
 			var vnode = m("div", {}, [null])
@@ -378,8 +379,7 @@ o.spec("hyperscript", function() {
 		o("handles multiple boolean children", function() {
 			var vnode = m("div", {}, [false, true])
 
-			o(vnode.children[0].tag).equals("#")
-			o(vnode.children[0].children).equals("")
+			o(vnode.children[0]).equals(null)
 			o(vnode.children[1].tag).equals("#")
 			o(vnode.children[1].children).equals(true)
 		})
@@ -481,11 +481,12 @@ o.spec("hyperscript", function() {
 			o(vnode.attrs.a).equals("b")
 			o(vnode.text).equals(0)
 		})
-		o("handles attr and single false boolean text child", function() {
+		o("handles attr and single false boolean child", function() {
 			var vnode = m("div", {a: "b"}, [false])
 
 			o(vnode.attrs.a).equals("b")
-			o(vnode.text).equals("")
+			o(vnode.text).equals(undefined)
+			o(vnode.children).deepEquals([null])
 		})
 		o("handles attr and single text child unwrapped", function() {
 			var vnode = m("div", {a: "b"}, "c")

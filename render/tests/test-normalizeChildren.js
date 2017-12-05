@@ -19,7 +19,6 @@ o.spec("normalizeChildren", function() {
 	o("normalizes `false` values into empty string text nodes", function() {
 		var children = Vnode.normalizeChildren([false])
 
-		o(children[0].tag).equals("#")
-		o(children[0].children).equals("")
+		o(children[0]).equals(null)
 	})
 })
