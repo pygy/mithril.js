@@ -369,11 +369,7 @@ suite.add({
 suite.add({
 	name : "repeated trees (no recycling)",
 	fn : function () {
-		m.render(scratch, [m(Root)])
-		m.render(scratch, [])
-
-		// Second empty render is to clear out the pool of nodes
-		// so that there's nothing that can be recycled
+		m.render(scratch, [m(Root, {key: 1})])
 		m.render(scratch, [])
 	}
 })
