@@ -837,7 +837,7 @@ o.spec("updateNodes", function() {
 			render(root, vnodes)
 			render(root, temp)
 			render(root, updated)
-	
+
 			o(root.childNodes.length).equals(1)
 			o(vnodes[0].dom).notEquals(updated[0].dom)
 			o(updated[0].dom.nodeName).equals("DIV")
@@ -1078,13 +1078,15 @@ o.spec("updateNodes", function() {
 		function attrs() {
 			return {oncreate: oncreate, onremove: onremove, onupdate: onupdate}
 		}
-
-		render(root, [{tag: "div", attrs: attrs()}, null]);
-		render(root, [null, {tag: "div", attrs: attrs()}, null]);
+		var first = {tag: "div", attrs: attrs()}
+		var second = {tag: "div", attrs: attrs()}
+		render(root, [first, null]);
+		render(root, [null, second, null]);
 
 		o(oncreate.callCount).equals(2)
 		o(onremove.callCount).equals(1)
 		o(onupdate.callCount).equals(0)
+		o(root.firstChild).equals(second.dom)
 	})
 	o("don't fetch the nextSibling from the pool", function() {
 		render(root, [{tag: "[", children: [{tag: "div", key: 1}, {tag: "div", key: 2}]}, {tag: "p"}])
