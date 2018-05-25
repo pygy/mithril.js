@@ -3,6 +3,9 @@
 
 ## Upcoming...
 <!-- Add new lines here. Version number will be decided later -->
+
+## 2.1.0
+_2018-05-25_
 ### Features
 >>>>>>> [ospec/bin] Back to ES5 (and complimentary cleanup), fix #2160
 - Pinpoint the `o.only()` call site ([#2157](https://github.com/MithrilJS/mithril.js/pull/2157))
