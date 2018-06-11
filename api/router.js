@@ -9,8 +9,12 @@ module.exports = function($window, redrawService) {
 
 	var identity = function(v) {return v}
 	var render, component, attrs, currentPath, lastUpdate
-	var route = function(root, defaultRoute, routes) {
+	var route = function(config) {
+		var root = config.root, defaultRoute = config.default, routes = config.routes
+		var prefix = config.prefix == null ? routeService.prefix : config.prefix
 		if (root == null) throw new Error("Ensure the DOM element that was passed to `m.route` is not undefined")
+		routeService.prefix = prefix
+		routeService.usePushState = prefix[0] !== "#" || !config.onhashchange
 		function run() {
 			if (render != null) redrawService.render(root, render(Vnode(component, attrs.key, attrs)))
 		}
@@ -51,7 +55,6 @@ module.exports = function($window, redrawService) {
 		routeService.setPath(path, data, options)
 	}
 	route.get = function() {return currentPath}
-	route.prefix = function(prefix, options) {routeService.prefix = prefix, routeService.usePushState = !options || !options.onhashchange}
 	var link = function(options, vnode) {
 		vnode.dom.setAttribute("href", routeService.prefix + vnode.attrs.href)
 		vnode.dom.onclick = function(e) {

@@ -12,35 +12,6 @@ var apiRouter = require("../../api/router")
 var Promise = require("../../promise/promise")
 
 o.spec("route", function() {
-	o.spec("prefix API", function() {
-		var $window, redrawService, route
-		o.beforeEach(function() {
-			$window = browserMock({})
-			redrawService = apiRedraw($window)
-			route = apiRouter($window, redrawService)
-		})
-		o("works without options", function() {
-			o(route.core.usePushState).equals(true)
-
-			route.prefix("#")
-
-			o(route.core.usePushState).equals(true)
-		})
-		o("works with onhashchange: false", function() {
-			o(route.core.usePushState).equals(true)
-
-			route.prefix("#", {onhashchange : false})
-
-			o(route.core.usePushState).equals(true)
-		})
-		o("works with onhashchange: true", function() {
-			o(route.core.usePushState).equals(true)
-
-			route.prefix("#", {onhashchange : true})
-
-			o(route.core.usePushState).equals(false)
-		})
-	})
 	void ["pushState", "onhashchange"].forEach(function(mode) {
 		void [{protocol: "http:", hostname: "localhost"}, {protocol: "file:", hostname: "/"}].forEach(function(env) {
 			void (mode === "pushState" ? ["#", "?", "", "#!", "?!", "/foo"] : ["#", "#!"]).forEach(function(prefix) {
@@ -56,7 +27,6 @@ o.spec("route", function() {
 
 						redrawService = apiRedraw($window, throttleMock.throttle)
 						route = apiRouter($window, redrawService)
-						route.prefix(prefix, {onhashchange: mode === "onhashchange"})
 					}
 
 					o.afterEach(function() {
@@ -68,7 +38,7 @@ o.spec("route", function() {
 
 						var threw = false
 						try {
-							route(null, "/", {"/":{view: function() {}}})
+							route({prefix: prefix, onhashchange: mode === "onhashchange", root: null, default: "/", routes: {"/":{view: function() {}}}})
 						} catch (e) {
 							threw = true
 						}
@@ -77,13 +47,13 @@ o.spec("route", function() {
 
 					o("renders into `root`", function() {
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 
 						o(root.firstChild.nodeName).equals("DIV")
 					})
@@ -92,7 +62,7 @@ o.spec("route", function() {
 						var view = o.spy()
 
 						init(prefix + "/")
-						route(root, "/", {"/":{view:view}})
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {"/":{view:view}}})
 
 						o(view.callCount).equals(1)
 
@@ -112,7 +82,7 @@ o.spec("route", function() {
 						Cmp.prototype.view = view
 
 						init(prefix + "/")
-						route(root, "/", {"/":Cmp})
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {"/":Cmp}})
 
 						o(view.callCount).equals(1)
 
@@ -131,7 +101,7 @@ o.spec("route", function() {
 						function Cmp() {return {view: view}}
 
 						init(prefix + "/")
-						route(root, "/", {"/":Cmp})
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {"/":Cmp}})
 
 						o(view.callCount).equals(1)
 
@@ -150,13 +120,13 @@ o.spec("route", function() {
 						$window.location.href = "http://old.com"
 						$window.location.href = "http://new.com"
 
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								view: function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							o(root.firstChild.nodeName).equals("DIV")
@@ -174,14 +144,14 @@ o.spec("route", function() {
 
 					o("default route does not inherit params", function(done) {
 						init(prefix + "/invalid?foo=bar")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								oninit: oninit,
 								view: function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 
 						function oninit(vnode) {
 							o(vnode.attrs.foo).equals(undefined)
@@ -196,7 +166,7 @@ o.spec("route", function() {
 						var oninit = o.spy()
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("div", {
@@ -205,7 +175,7 @@ o.spec("route", function() {
 									})
 								}
 							}
-						})
+						}})
 
 						o(oninit.callCount).equals(1)
 
@@ -224,7 +194,7 @@ o.spec("route", function() {
 						e.initEvent("click", true, true)
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("div", {
@@ -234,7 +204,7 @@ o.spec("route", function() {
 									})
 								}
 							}
-						})
+						}})
 
 						root.firstChild.dispatchEvent(e)
 
@@ -258,7 +228,7 @@ o.spec("route", function() {
 						e.initEvent("click", true, true)
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("div", {
@@ -266,11 +236,11 @@ o.spec("route", function() {
 										onupdate: onupdate,
 										onclick: function(e) {
 											e.redraw = false
-										},
+										}
 									})
 								}
 							}
-						})
+						}})
 
 						o(oninit.callCount).equals(1)
 
@@ -292,7 +262,7 @@ o.spec("route", function() {
 						e.initEvent("click", true, true)
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("a", {
@@ -306,7 +276,7 @@ o.spec("route", function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 
 						var slash = prefix[0] === "/" ? "" : "/"
 
@@ -324,7 +294,7 @@ o.spec("route", function() {
 						e.initEvent("click", true, true)
 						$window.location.href = prefix + "/"
 
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								view: function() {
 									return m("a", {
@@ -338,7 +308,7 @@ o.spec("route", function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 						route.set = o.spy(route.set)
 
 						root.firstChild.dispatchEvent(e)
@@ -376,9 +346,9 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : resolver
-						})
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -417,9 +387,9 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : resolver
-						})
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -453,9 +423,9 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : resolver
-						})
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -489,9 +459,9 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : resolver
-						})
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -518,10 +488,10 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/test/1")
-						route(root, "/default", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/default", routes: {
 							"/default" : {view: spy},
 							"/test/:id" : resolver
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -542,7 +512,7 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : {
 								onmatch: function(args, requestedPath) {
 									matchCount++
@@ -552,8 +522,8 @@ o.spec("route", function() {
 
 									return Component
 								},
-							},
-						})
+							}
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -571,11 +541,11 @@ o.spec("route", function() {
 							}
 						}
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id": {render: function(vnode) {
 								return m(Component, {key: vnode.attrs.id})
 							}}
-						})
+						}})
 						callAsync(function() {
 							o(oninit.callCount).equals(1)
 							route.set("/def")
@@ -598,7 +568,7 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/abc")
-						route(root, "/abc", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/abc", routes: {
 							"/:id" : {
 								render: function(vnode) {
 									renderCount++
@@ -607,8 +577,8 @@ o.spec("route", function() {
 
 									return m(Component)
 								},
-							},
-						})
+							}
+						}})
 
 						o(root.firstChild.nodeName).equals("DIV")
 						o(renderCount).equals(1)
@@ -616,7 +586,7 @@ o.spec("route", function() {
 
 					o("RouteResolver `render` does not have component semantics", function(done) {
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								render: function() {
 									return m("div", m("p"))
@@ -626,8 +596,8 @@ o.spec("route", function() {
 								render: function() {
 									return m("div", m("a"))
 								},
-							},
-						})
+							}
+						}})
 
 						var dom = root.firstChild
 						var child = dom.firstChild
@@ -656,7 +626,7 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								onmatch: function() {
 									matchCount++
@@ -666,8 +636,8 @@ o.spec("route", function() {
 									renderCount++
 									return vnode
 								},
-							},
-						})
+							}
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -693,7 +663,7 @@ o.spec("route", function() {
 						}
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/" : {
 								onmatch: function() {
 									matchCount++
@@ -702,8 +672,8 @@ o.spec("route", function() {
 									renderCount++
 									return {tag: Component}
 								},
-							},
-						})
+							}
+						}})
 
 						callAsync(function() {
 							o(matchCount).equals(1)
@@ -724,7 +694,7 @@ o.spec("route", function() {
 						var render = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/b")
@@ -736,7 +706,7 @@ o.spec("route", function() {
 									redirected = true
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							o(render.callCount).equals(0)
@@ -752,7 +722,7 @@ o.spec("route", function() {
 						var view = o.spy(function() {return m("div")})
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/b", {}, {state: {a: 5}})
@@ -765,7 +735,7 @@ o.spec("route", function() {
 									return {view: view}
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -786,7 +756,7 @@ o.spec("route", function() {
 						var render = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/b")
@@ -798,7 +768,7 @@ o.spec("route", function() {
 									redirected = true
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							o(render.callCount).equals(0)
@@ -814,7 +784,7 @@ o.spec("route", function() {
 						var view = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/b")
@@ -831,7 +801,7 @@ o.spec("route", function() {
 									})
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -852,7 +822,7 @@ o.spec("route", function() {
 						var view = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									callAsync(function() {route.set("/b")})
@@ -866,7 +836,7 @@ o.spec("route", function() {
 									return {view: view}
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -890,7 +860,7 @@ o.spec("route", function() {
 						var component = {view: o.spy()}
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a" : {
 								onmatch: function() {
 									return component
@@ -906,7 +876,7 @@ o.spec("route", function() {
 								},
 								render: render
 							}
-						})
+						}})
 						callAsync(function() {
 							throttleMock.fire()
 
@@ -931,7 +901,7 @@ o.spec("route", function() {
 						var render = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/b", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/b", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/c")
@@ -944,7 +914,7 @@ o.spec("route", function() {
 									return {view: function() {}}
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -961,7 +931,7 @@ o.spec("route", function() {
 						var render = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/b", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/b", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/c")
@@ -973,7 +943,7 @@ o.spec("route", function() {
 									redirected = true
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -990,7 +960,7 @@ o.spec("route", function() {
 						var render = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/b", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/b", routes: {
 							"/a" : {
 								onmatch: function() {
 									route.set("/c")
@@ -1002,7 +972,7 @@ o.spec("route", function() {
 									redirected = true
 								}
 							}
-						})
+						}})
 
 						callAsync(function() {
 							callAsync(function() {
@@ -1021,10 +991,10 @@ o.spec("route", function() {
 						})
 
 						init(prefix + "/a")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/a": {view: view},
 							"/b": {onmatch: onmatch}
-						})
+						}})
 
 						o(view.callCount).equals(1)
 						o(onmatch.callCount).equals(0)
@@ -1057,7 +1027,7 @@ o.spec("route", function() {
 						})
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a": {
 								onmatch: onmatchA,
 								render: renderA
@@ -1089,7 +1059,7 @@ o.spec("route", function() {
 								},
 								render: renderB
 							}
-						})
+						}})
 
 						callAsync(function() {
 							o(onmatchA.callCount).equals(1)
@@ -1107,12 +1077,12 @@ o.spec("route", function() {
 						var render = o.spy(function() {return m("div")})
 
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/": {
 								onmatch: onmatch,
 								render: render
 							}
-						})
+						}})
 
 						callAsync(function() {
 							throttleMock.fire()
@@ -1138,14 +1108,14 @@ o.spec("route", function() {
 					o("m.route.get() returns the last fully resolved route (#1276)", function(done){
 						init(prefix + "/")
 
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/": {view: function() {}},
 							"/2": {
 								onmatch: function() {
 									return new Promise(function() {})
 								}
 							}
-						})
+						}})
 
 
 						o(route.get()).equals("/")
@@ -1160,7 +1130,7 @@ o.spec("route", function() {
 
 					o("routing with RouteResolver works more than once", function(done) {
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a": {
 								render: function() {
 									return m("a", "a")
@@ -1171,7 +1141,7 @@ o.spec("route", function() {
 									return m("b", "b")
 								}
 							}
-						})
+						}})
 
 						route.set("/b")
 
@@ -1196,7 +1166,7 @@ o.spec("route", function() {
 						var rendered = false
 						var resolved
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a": {
 								onmatch: function() {
 									return new Promise(function(resolve) {
@@ -1217,7 +1187,7 @@ o.spec("route", function() {
 									resolved = "b"
 								}
 							}
-						})
+						}})
 
 						route.set("/b")
 
@@ -1237,7 +1207,7 @@ o.spec("route", function() {
 						var spy = o.spy()
 
 						init(prefix + "/a")
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a": {
 								onbeforeremove: spy,
 								view: function() {}
@@ -1245,7 +1215,7 @@ o.spec("route", function() {
 							"/b": {
 								view: function() {}
 							}
-						})
+						}})
 
 						route.set("/b")
 
@@ -1260,7 +1230,7 @@ o.spec("route", function() {
 
 					o("asynchronous route.set in onmatch works", function(done) {
 						var rendered = false, resolved
-						route(root, "/a", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/a", routes: {
 							"/a": {
 								onmatch: function() {
 									return Promise.resolve().then(function() {
@@ -1276,8 +1246,8 @@ o.spec("route", function() {
 								view: function() {
 									resolved = "b"
 								}
-							},
-						})
+							}
+						}})
 
 						callAsync(function() { // tick for popstate for /a
 							callAsync(function() { // tick for promise in onmatch
@@ -1294,9 +1264,9 @@ o.spec("route", function() {
 					o("throttles", function() {
 						var i = 0
 						init(prefix + "/")
-						route(root, "/", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/", routes: {
 							"/": {view: function() {i++}}
-						})
+						}})
 						var before = i
 
 						redrawService.redraw()
@@ -1315,7 +1285,7 @@ o.spec("route", function() {
 					o("m.route.param is available outside of route handlers", function(done) {
 						init(prefix + "/")
 
-						route(root, "/1", {
+						route({prefix: prefix, onhashchange: mode === "onhashchange", root: root, default: "/1", routes: {
 							"/:id" : {
 								view : function() {
 									o(route.param("id")).equals("1")
@@ -1323,7 +1293,7 @@ o.spec("route", function() {
 									return m("div")
 								}
 							}
-						})
+						}})
 
 						o(route.param("id")).equals(undefined);
 						o(route.param()).deepEquals(undefined);
