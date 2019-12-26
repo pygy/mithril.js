@@ -14,6 +14,11 @@
 
 ### Upcoming...
 
+### 4.1.1
+2019-12-26
+
+- Add the `--module` and `--parallel` options to the runner, for recent NodeJS versions (opt-in thus backwards compatible).
+
 ### 4.0.1
 _2019-08-18_
 

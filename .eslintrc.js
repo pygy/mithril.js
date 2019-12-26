@@ -6,6 +6,10 @@ module.exports = {
         "node": true
 	},
     "extends": "eslint:recommended",
+    "parser": "babel-eslint",
+    "parserOptions": {
+        "sourceType": "script"
+    },
     "rules": {
         "accessor-pairs": "error",
         "array-bracket-spacing": [
