@@ -257,10 +257,12 @@ function saveCache(nextCache) {
 function finalReport(totals) {
 	const buffer = []
 	if (totals.errors > 0) {
-		buffer.push(`${totals.errors} error${totals.errors > 1 ? "s" : ""}`)
+		const s = totals.errors > 1 ? "s" : ""
+		buffer.push(`${totals.errors} error${s}`)
 	}
 	if (totals.warnings > 0) {
-		buffer.push(`${totals.warnings} warning${totals.warnings > 1 ? "s" : ""}`)
+		const s = totals.warnings > 1 ? "s" : ""
+		buffer.push(`${totals.warnings} warning${s}`)
 	}
 	if (buffer.length > 0) console.log(`\n${buffer.join(", ")} found in the docs\n`)
 	else console.log("The docs are in good shape!\n")
